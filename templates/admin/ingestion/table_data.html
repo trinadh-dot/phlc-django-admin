@@ -1,0 +1,127 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static admin_extras %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+&rsaquo; <a href="{% url 'admin:database_tables' %}">Database Tables</a>
+&rsaquo; {{ table_name }}
+</div>
+{% endblock %}
+
+{% block content %}
+<h1>Table: {{ table_name }}</h1>
+
+{% if error_message %}
+<div class="errornote">
+    <strong>Error:</strong> {{ error_message }}
+</div>
+{% endif %}
+
+<div style="margin: 20px 0;">
+    <a href="{% url 'admin:database_tables' %}" class="button">← Back to Tables</a>
+    <a href="{% url 'admin:index' %}" class="button" style="margin-left: 10px;">← Admin Home</a>
+    <a href="/api/redoc/" target="_blank" class="button" style="margin-left: 10px;">📖 API Docs</a>
+</div>
+
+{% if columns %}
+<div class="module" style="margin-top: 20px;">
+    <h2>Table Information</h2>
+    <p><strong>Total Rows:</strong> {{ total_rows|default:0 }}</p>
+    <p><strong>Columns:</strong> {{ columns|length }}</p>
+    
+    <h3 style="margin-top: 20px;">Column Details</h3>
+    <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+        <thead>
+            <tr style="background-color: #f5f5f5;">
+                <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Column Name</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Data Type</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for col in columns %}
+            <tr>
+                <td style="padding: 10px; border: 1px solid #ddd;"><strong>{{ col.name }}</strong></td>
+                <td style="padding: 10px; border: 1px solid #ddd;">{{ col.type }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if data %}
+<div class="module" style="margin-top: 20px;">
+    <h2>Table Data (Showing {{ data|length }} of {{ total_rows }} rows)</h2>
+    
+    <div style="margin: 10px 0;">
+        <form method="get" style="display: inline;">
+            <label>Limit: <input type="number" name="limit" value="{{ limit }}" min="1" max="5000" style="width: 80px;"></label>
+            <label style="margin-left: 10px;">Offset: <input type="number" name="offset" value="{{ offset }}" min="0" style="width: 80px;"></label>
+            <input type="submit" value="Go" class="button" style="margin-left: 10px;">
+        </form>
+    </div>
+    
+    <div style="overflow-x: auto; margin-top: 10px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+            <thead>
+                <tr style="background-color: #f5f5f5;">
+                    {% for col in columns %}
+                    <th style="padding: 8px; text-align: left; border: 1px solid #ddd; white-space: nowrap;">{{ col.name }}</th>
+                    {% endfor %}
+                    <th style="padding: 8px; text-align: left; border: 1px solid #ddd; white-space: nowrap;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in data %}
+                <tr>
+                    {% for col in columns %}
+                    <td style="padding: 8px; border: 1px solid #ddd; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        {% with col_name=col.name %}
+                            {% if row|get_item:col_name %}
+                                {{ row|get_item:col_name }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        {% endwith %}
+                    </td>
+                    {% endfor %}
+                    <td style="padding: 8px; border: 1px solid #ddd; white-space: nowrap;">
+                        {% if primary_keys %}
+                            <a href="{% url 'admin:table_row_view' table_name %}?{% for pk in primary_keys %}{{ pk }}={{ row|get_item:pk }}{% if not forloop.last %}&{% endif %}{% endfor %}" class="button" style="padding: 3px 8px; font-size: 11px; margin-right: 3px;">View</a>
+                            <a href="{% url 'admin:table_row_edit' table_name %}?{% for pk in primary_keys %}{{ pk }}={{ row|get_item:pk }}{% if not forloop.last %}&{% endif %}{% endfor %}" class="button" style="padding: 3px 8px; font-size: 11px; margin-right: 3px;">Edit</a>
+                            <a href="{% url 'admin:table_row_delete' table_name %}?{% for pk in primary_keys %}{{ pk }}={{ row|get_item:pk }}{% if not forloop.last %}&{% endif %}{% endfor %}" class="button" style="padding: 3px 8px; font-size: 11px; background-color: #ba2121; color: white;">Delete</a>
+                        {% else %}
+                            <span style="color: #999; font-size: 11px;">No PK</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <div style="margin-top: 15px;">
+        {% if has_previous %}
+        <a href="?limit={{ limit }}&offset={{ prev_offset }}" class="button">← Previous</a>
+        {% endif %}
+        {% if has_next %}
+        <a href="?limit={{ limit }}&offset={{ next_offset }}" class="button" style="margin-left: 10px;">Next →</a>
+        {% endif %}
+    </div>
+</div>
+{% else %}
+<div class="info" style="margin-top: 20px;">
+    <p>No data found in this table.</p>
+</div>
+{% endif %}
+
+{% else %}
+<div class="info" style="margin-top: 20px;">
+    <p>No columns found for this table.</p>
+</div>
+{% endif %}
+
+{% endblock %}
+
