@@ -32,6 +32,7 @@ from .tasks import (
 )
 
 
+@extend_schema(exclude=True)
 class JobViewSet(viewsets.ModelViewSet):
     """ViewSet for Job model."""
     queryset = Job.objects.all()

@@ -127,19 +127,23 @@ class JobAdmin(admin.ModelAdmin):
     
     def status_badge(self, obj):
         """Display status with color badge."""
-        colors = {
-            'completed': 'green',
-            'failed': 'red',
-            'running': 'orange',
-            'queued': 'gray',
-        }
-        color = colors.get(obj.status, 'gray')
-        return format_html(
-            '<span style="background-color: {}; color: white; padding: 3px 8px; '
-            'border-radius: 3px; font-weight: bold;">{}</span>',
-            color,
-            obj.get_status_display()
-        )
+        try:
+            colors = {
+                'completed': 'green',
+                'failed': 'red',
+                'running': 'orange',
+                'queued': 'gray',
+            }
+            color = colors.get(obj.status, 'gray')
+            status_display = obj.get_status_display() if hasattr(obj, 'get_status_display') else obj.status
+            return format_html(
+                '<span style="background-color: {}; color: white; padding: 3px 8px; '
+                'border-radius: 3px; font-weight: bold;">{}</span>',
+                color,
+                status_display
+            )
+        except Exception:
+            return obj.status if obj.status else '-'
     status_badge.short_description = 'Status'
     status_badge.admin_order_field = 'status'
     
@@ -150,23 +154,29 @@ class JobAdmin(admin.ModelAdmin):
     
     def duration(self, obj):
         """Calculate and display job duration."""
-        if obj.status == 'running':
-            delta = timezone.now() - obj.created_at
-        elif obj.updated_at:
-            delta = obj.updated_at - obj.created_at
-        else:
+        try:
+            if not obj.created_at:
+                return '-'
+            
+            if obj.status == 'running':
+                delta = timezone.now() - obj.created_at
+            elif obj.updated_at:
+                delta = obj.updated_at - obj.created_at
+            else:
+                return '-'
+            
+            total_seconds = int(delta.total_seconds())
+            hours, remainder = divmod(total_seconds, 3600)
+            minutes, seconds = divmod(remainder, 60)
+            
+            if hours > 0:
+                return f'{hours}h {minutes}m {seconds}s'
+            elif minutes > 0:
+                return f'{minutes}m {seconds}s'
+            else:
+                return f'{seconds}s'
+        except Exception:
             return '-'
-        
-        total_seconds = int(delta.total_seconds())
-        hours, remainder = divmod(total_seconds, 3600)
-        minutes, seconds = divmod(remainder, 60)
-        
-        if hours > 0:
-            return f'{hours}h {minutes}m {seconds}s'
-        elif minutes > 0:
-            return f'{minutes}m {seconds}s'
-        else:
-            return f'{seconds}s'
     duration.short_description = 'Duration'
     
     def get_list_display_links(self, request, list_display):
@@ -181,10 +191,11 @@ class JobAdmin(admin.ModelAdmin):
         """Jobs are created via API, not admin."""
         return False
     
-    class Media:
-        css = {
-            'all': ('admin/css/job_admin.css',)
-        }
+    # Removed Media class - CSS file doesn't exist and causes 500 errors in production
+    # class Media:
+    #     css = {
+    #         'all': ('admin/css/job_admin.css',)
+    #     }
 
 
 # Custom admin views for database tables
