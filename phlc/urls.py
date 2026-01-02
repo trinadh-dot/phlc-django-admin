@@ -5,6 +5,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import JsonResponse
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularRedocView,
@@ -17,6 +18,14 @@ from ingestion.admin import (
     table_row_edit, 
     table_row_delete
 )
+
+
+def health_check(request):
+    """
+    Health check endpoint for production monitoring.
+    Returns a simple JSON response without database or authentication checks.
+    """
+    return JsonResponse({"status": "ok"})
 
 # Override admin site's get_urls to add custom URLs
 original_get_urls = admin.site.get_urls
@@ -40,6 +49,9 @@ def custom_get_urls():
 admin.site.get_urls = custom_get_urls
 
 urlpatterns = [
+    # Health check endpoint (for production monitoring)
+    path('health/', health_check, name='health_check'),
+    
     # Admin
     path('admin/', admin.site.urls),
     
