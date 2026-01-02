@@ -14,8 +14,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Security settings
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-change-this-in-production')
-DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'  # Default to True for development
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,172.31.18.4').split(',')
+DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'  # Default to False for production
+
+# ALLOWED_HOSTS - must include production domain
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'phlc-django-admin.onrender.com,localhost,127.0.0.1').split(',')
+
+# CSRF_TRUSTED_ORIGINS - required for production HTTPS
+CSRF_TRUSTED_ORIGINS = os.getenv(
+    'CSRF_TRUSTED_ORIGINS',
+    'https://phlc-django-admin.onrender.com'
+).split(',')
 
 # Disable HTTPS redirect for local development (always False for dev server)
 SECURE_SSL_REDIRECT = False
