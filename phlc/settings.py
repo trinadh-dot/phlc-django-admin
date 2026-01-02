@@ -164,6 +164,8 @@ SPECTACULAR_SETTINGS = {
         'showExtensions': True,
         'showCommonExtensions': True,
         'tryItOutEnabled': True,
+        # Force HTTP scheme for local development
+        'schemes': ['http'] if DEBUG else ['https', 'http'],
     },
 }
 
